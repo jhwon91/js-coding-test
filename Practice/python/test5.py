@@ -1,48 +1,49 @@
-import sys
+import sys, heapq
 
 INF = float('inf')
-results = []
-T = int(input())
+input = sys.stdin.readline
+ProblemCount = 0 # 문제 번호를 카운트하기 위한 변수
 
-def df(n, graph):
-    dist = [INF] * (n + 1)
-    dist[1] = 0  # 1번 노드를 시작점으로 설정
+# 무한 반복문, 종료 조건은 N이 0일 때
+while True:
+    N = int(input())
 
-    # N-1번 반복
-    for _ in range(n - 1):
-        for current_node in range(1, n + 1):
-            for nextValue, nextNode in graph[current_node]:
-                if dist[current_node] != INF and dist[nextNode] > dist[current_node] + nextValue:
-                    dist[nextNode] = dist[current_node] + nextValue
+    # N이 0이면 종료
+    if N == 0: break
 
-    # 음수 사이클 검사
-    for current_node in range(1, n + 1):
-        for nextValue, nextNode in graph[current_node]:
-            if dist[nextNode] > dist[current_node] + nextValue:
-                return True  # 음수 사이클 존재
+    # 동굴의 각 칸에 있는 도둑루피 정보를 2차원 리스트로 저장
+    graph = [list(map(int, input().split())) for _ in range(N)]
 
-    return False
+    # 최소 비용 테이블 초기화 (모든 값을 INF로 설정)
+    dist = [[INF] * N for _ in range(N)]
+    dist[0][0] = graph[0][0]# 시작 지점의 최소 비용은 해당 칸의 값으로 초기화
 
-for _ in range(T):
-    N, M, W = map(int, input().split())
-    graph = [[] for _ in range(N + 1)]  # 인접 리스트 초기화
+    # 우선순위 큐 (힙) 초기화: (비용, y좌표, x좌표)
+    heap = [[graph[0][0], 0, 0]]
 
-    # 도로 정보 입력
-    for _ in range(M):
-        S, E, T = map(int, input().split())
-        graph[S].append((T, E))  # 도로 (양방향)
-        graph[E].append((T, S))  # 도로 (양방향)
+    # 방향 벡터 정의 (상하좌우 이동)
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
-    # 웜홀 정보 입력
-    for _ in range(W):
-        S, E, T = map(int, input().split())
-        graph[S].append((-T, E))  # 웜홀 (단방향)
+    while heap:
+        currentValue, currentY, currentX = heapq.heappop(heap)
 
-    # 음수 사이클 검사
-    if df(N, graph):
-        results.append("YES")
-    else:
-        results.append("NO")
+        # 이미 최소 비용이 더 작은 경우에는 처리하지 않음
+        if dist[currentY][currentX] < currentValue: continue
 
-# 결과 출력
-print("\n".join(results))
+        # 상하좌우 인접한 칸 탐색
+        for dy, dx in directions:
+            moveY = dy + currentY
+            moveX = dx + currentX
+
+            # 인접한 칸이 범위 안에 있는지 확인
+            if 0 <= moveY < N and 0 <= moveX < N:
+                # 현재 칸을 거쳐서 이동했을 때의 비용 계산
+                if dist[moveY][moveX] > currentValue + graph[moveY][moveX]:
+                    dist[moveY][moveX] = currentValue + graph[moveY][moveX]
+                    heapq.heappush(heap, (dist[moveY][moveX], moveY, moveX))
+
+    # 문제 번호 증가
+    ProblemCount += 1
+
+    # 문제 번호와 최소 비용 출력
+    print(f"Problem {ProblemCount}: {dist[N-1][N-1]}")
